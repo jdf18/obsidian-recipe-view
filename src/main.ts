@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, addIcon } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, addIcon, TFile } from 'obsidian';
 
 import { RecipeView, VIEW_TYPE_RECIPE } from './recipe-view';
 import store from './store';
@@ -22,6 +22,8 @@ const DEFAULT_SETTINGS: RecipeViewPluginSettings = {
 
 export default class RecipeViewPlugin extends Plugin {
 	settings: RecipeViewPluginSettings = DEFAULT_SETTINGS;
+	
+	private manualViewChange: boolean = false;
 
 	async onload() {
 		await this.loadSettings();
@@ -38,6 +40,10 @@ export default class RecipeViewPlugin extends Plugin {
 			name: "Toggle between recipe card and markdown",
 			checkCallback: (c) => this.toggleView(c),
 		});
+	
+		this.registerEvent(
+			this.app.workspace.on('active-leaf-change', this.handleFileOpen.bind(this))
+		);
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new RecipeViewSettingsTab(this.app, this));
@@ -51,9 +57,34 @@ export default class RecipeViewPlugin extends Plugin {
 	onunload() {
 
 	}
+	
+	async handleFileOpen() {
+		const leaf = this.app.workspace.activeLeaf;
+		const file = leaf?.view.file;
+		
+		// Skip handling the file change if the view was changed manually
+		if (this.manualViewChange) {
+			this.manualViewChange = false; // Reset the flag after handling
+			return;
+		}
+		
+		if (file instanceof TFile) {
+			const fileCache = this.app.metadataCache.getFileCache(file);
+
+			if (fileCache?.frontmatter && fileCache.frontmatter.tags) {
+				
+				if (fileCache.frontmatter.tags && fileCache.frontmatter.tags.some(tag => tag === 'recipe')) {
+					this.setRecipeView(leaf!);
+				}
+			}
+		}
+	}
 
 	toggleView(checking: boolean) {
 		const activeLeaf = this.app.workspace.getMostRecentLeaf();
+		
+		// Set the flag to indicate that this is a manual view change
+		this.manualViewChange = true;
 
 		if (activeLeaf?.getViewState().type == "markdown") {
 			if (!checking) {

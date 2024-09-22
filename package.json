@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-recipe-view",
+	"name": "obsidian-recipe-view-test",
 	"version": "0.3.6",
 	"description": "View your notes as interactive recipe cards while you cook.",
 	"main": "main.js",
@@ -21,7 +21,7 @@
 		"@typescript-eslint/parser": "5.29.0",
 		"builtin-modules": "3.3.0",
 		"esbuild": "0.17.3",
-		"esbuild-svelte": "^0.8.0",
+		"esbuild-svelte": "^0.8.2",
 		"eslint-plugin-svelte": "^2.33.2",
 		"jest": "^29.7.0",
 		"obsidian": "latest",
