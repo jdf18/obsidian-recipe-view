@@ -10,6 +10,7 @@ interface RecipeViewPluginSettings {
 	renderUnicodeFractions: boolean;
 	singleColumnMaxWidth: number;
 	showBulletsTwoColumn: boolean;
+	tag: string;
 }
 
 const DEFAULT_SETTINGS: RecipeViewPluginSettings = {
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: RecipeViewPluginSettings = {
 	renderUnicodeFractions: true,
 	singleColumnMaxWidth: 600,
 	showBulletsTwoColumn: false,
+	tag: 'recipe',
 }
 
 export default class RecipeViewPlugin extends Plugin {
@@ -59,7 +61,7 @@ export default class RecipeViewPlugin extends Plugin {
 	}
 	
 	async handleFileOpen() {
-		const leaf = this.app.workspace.activeLeaf;
+		const leaf = this.app.workspace.getMostRecentLeaf();
 		const file = leaf?.view.file;
 		
 		// Skip handling the file change if the view was changed manually
@@ -73,7 +75,7 @@ export default class RecipeViewPlugin extends Plugin {
 
 			if (fileCache?.frontmatter && fileCache.frontmatter.tags) {
 				
-				if (fileCache.frontmatter.tags && fileCache.frontmatter.tags.some(tag => tag === 'recipe')) {
+				if (fileCache.frontmatter.tags && fileCache.frontmatter.tags.some(tag => tag === this.settings.tag)) {
 					this.setRecipeView(leaf!);
 				}
 			}
@@ -142,7 +144,9 @@ class RecipeViewSettingsTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		new Setting(containerEl).setName("Recipe parsing").setHeading()
+		new Setting(containerEl)
+			.setName("Recipe parsing")
+			.setHeading()
 
 		new Setting(containerEl)
 			.setName('Side column regex')
@@ -201,5 +205,18 @@ class RecipeViewSettingsTab extends PluginSettingTab {
 					this.plugin.settings!.singleColumnMaxWidth = value;
 					await this.plugin.saveSettings()
 				}))
+		
+		new Setting(containerEl)
+			.setName('Recipe tag')
+			.setDesc('The tag for recipes to set the view automatically.')
+			.addText((text) =>
+				text
+					.setPlaceholder('Enter a tag, e.g., recipe')
+					.setValue(this.plugin.settings.tag)
+					.onChange(async (value) => {
+						this.plugin.settings.tag = value; // Update the setting
+						await this.plugin.saveSettings(); // Save the setting
+					})
+			);
 	}
 }
